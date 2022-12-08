@@ -1,0 +1,188 @@
+--21.01
+SELECT module_id, module_name
+FROM modules
+WHERE module_id NOT IN
+(SELECT module_id
+FROM students_modules)
+ORDER BY module_name DESC
+
+--21.02
+SELECT student_id
+FROM student_grades
+WHERE student_id IN
+(SELECT student_id
+FROM student_grades
+WHERE exam_date = '2018-03-22' AND exam_date = '2018-09-30')
+
+SELECT student_id
+FROM student_grades
+WHERE exam_date = '2018-03-22'
+INTERSECT
+SELECT student_id
+FROM student_grades
+WHERE exam_date = '2018-09-30'
+ORDER BY student_id DESC
+
+--21.03
+SELECT s.student_id
+FROM students s
+WHERE s.student_id IN
+(SELECT sm.student_id
+FROM students_modules sm
+INNER JOIN
+modules m ON sm.module_id = m.module_id
+WHERE m.module_id = 2
+AND sm.student_id IN
+(SELECT sm.student_id
+FROM students_modules sm
+INNER JOIN
+modules m ON sm.module_id = m.module_id
+WHERE m.module_id = 4))
+ORDER BY s.surname DESC
+
+--21.04
+SELECT student_id, surname,first_name
+FROM students
+WHERE student_id IN
+(SELECT sm.student_id
+FROM modules m
+INNER JOIN students_modules sm ON m.module_id = sm.module_id
+WHERE module_name = 'Mathematics'
+AND sm.student_id NOT IN
+(SELECT sm.student_id
+FROM modules m
+INNER JOIN students_modules sm ON m.module_id = sm.module_id
+WHERE module_name = 'Statistics'))
+
+--21.05
+SELECT s.first_name, s.surname, s.group_no
+FROM students s
+WHERE group_no LIKE 'DMIe%1' COLLATE SQL_Latin1_General_CP1_CS_AS AND s.student_id NOT IN
+(SELECT sm.student_id
+FROM students_modules sm
+INNER JOIN
+modules m ON m.module_id = sm.module_id
+WHERE m.module_name = 'Ancient history')
+
+--21.06
+SELECT TOP(1) module_name, no_of_hours
+FROM modules
+ORDER BY no_of_hours
+
+--21.07
+SELECT s.student_id, s.surname
+FROM student_grades sg
+INNER JOIN
+students s ON sg.student_id = s.student_id
+WHERE sg.grade > ANY
+(SELECT grade 
+FROM student_grades)
+
+--21.08
+SELECT first_name, surname, date_of_birth
+FROM students
+WHERE date_of_birth IS NOT NULL AND date_of_birth > ALL
+(SELECT date_of_birth 
+FROM students)
+
+--21.09a
+SELECT DISTINCT s.student_id, first_name, surname
+FROM students s
+INNER JOIN
+student_grades sg ON s.student_id = sg.student_id
+WHERE group_no IS NOT NULL AND group_no LIKE 'DMIe1011'
+AND sg.exam_date <= ALL
+(SELECT exam_date
+FROM student_grades)
+
+--21.09b
+SELECT DISTINCT s.student_id, first_name, surname, group_no
+FROM students s
+INNER JOIN
+student_grades sg ON s.student_id = sg.student_id
+WHERE group_no LIKE 'DMIe1011'
+AND sg.exam_date <= ALL
+(SELECT exam_date
+FROM student_grades)
+
+--21.10
+SELECT module_name, no_of_hours
+FROM modules
+WHERE no_of_hours =
+(SELECT MAX(no_of_hours)
+FROM modules)
+
+--21.11
+SELECT module_name
+FROM modules
+WHERE no_of_hours >
+(SELECT MIN(no_of_hours)
+FROM modules)
+ORDER BY no_of_hours
+
+--21.12a
+SELECT DISTINCT group_no, first_name, surname, date_of_birth
+FROM students
+WHERE group_no IS NOT NULL
+AND date_of_birth IS NOT NULL 
+AND date_of_birth IN
+(SELECT MIN(date_of_birth)
+FROM students
+GROUP BY group_no)
+
+--21.12b
+SELECT DISTINCT group_no 
+FROM students
+ORDER BY group_no
+
+--różnica wynika z tego że jeden ze studentów ma nieprzypisaną datę urodzenia
+
+--21.13
+SELECT student_id, surname, first_name
+FROM students s
+WHERE EXISTS
+(SELECT *
+FROM student_grades sg
+WHERE s.student_id = sg.student_id
+AND sg.grade = '5.0')
+
+--21.14a
+SELECT module_id
+FROM modules
+WHERE EXISTS
+(SELECT module_id
+FROM modules
+WHERE preceding_module = 3)
+
+--21.14b
+SELECT module_name
+FROM modules
+WHERE EXISTS
+(SELECT preceding_module
+FROM modules
+WHERE module_name = 'Mathematics')
+
+SELECT module_name
+FROM modules
+WHERE preceding_module =
+(SELECT module_id
+FROM modules
+WHERE module_name = 'Mathematics')
+
+--21.15a
+SELECT *
+FROM students s
+CROSS APPLY
+(SELECT MIN(planned_exam_date)
+FROM students_modules sm
+WHERE s.student_id = sm.student_id
+AND s.group_no LIKE 'DMIe1011') A
+
+--21.16a
+SELECT s.student_id, s.surname, grade
+FROM students s
+CROSS APPLY
+(SELECT top(2) *
+FROM student_grades sg
+WHERE s.student_id = sg.student_id
+ORDER BY grade DESC) x
