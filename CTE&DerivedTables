@@ -1,0 +1,119 @@
+--22.01a
+--funkcja
+CREATE OR ALTER FUNCTION studmod_f(@module VarChar(100))
+RETURNS TABLE AS RETURN
+SELECT surname, first_name
+FROM students
+WHERE student_id IN
+(SELECT student_id
+FROM students_modules
+WHERE module_id IN
+(SELECT module_id
+FROM modules
+WHERE module_name = @module))
+
+--tworzenie session context
+EXEC sp_set_session_context @key = N'module',@value = 'Mathematics'
+SELECT *
+FROM studmod_v
+
+--widok
+CREATE OR ALTER VIEW studmod_v AS
+SELECT surname, first_name
+FROM students
+WHERE student_id IN
+(SELECT student_id
+FROM students_modules
+WHERE module_id IN
+(SELECT module_id
+FROM modules
+WHERE module_name = SESSION_CONTEXT(N'module')))
+
+--22.01b
+SELECT *
+FROM studmod_f('Mathematics')
+ORDER BY surname
+SELECT *
+FROM studmod_f('Statistics')
+ORDER BY surname
+SELECT *
+FROM studmod_f('Databases')
+ORDER BY surname
+
+--22.02
+WITH x AS
+(SELECT sg.*,
+ROW_NUMBER() OVER(PARTITION BY sg.module_id ORDER BY sg.exam_date, sg.student_id) sequence_num
+FROM student_grades sg
+INNER JOIN modules m ON sg.module_id = m.module_id)
+SELECT *
+FROM x
+
+--22.03
+WITH x AS
+(SELECT sg.*,
+ROW_NUMBER() OVER(PARTITION BY sg.student_id ORDER BY sg.exam_date) sequence_num
+FROM student_grades sg
+INNER JOIN modules m ON sg.module_id = m.module_id
+WHERE sg.grade > 2)
+SELECT *
+FROM x
+
+--22.04
+WITH x AS
+(SELECT s.student_id, s.surname, sg.exam_date,
+ROW_NUMBER() OVER(PARTITION BY s.student_id ORDER BY sg.exam_date) sequence_num
+FROM students s
+INNER JOIN student_grades sg ON s.student_id = sg.student_id
+WHERE sg.grade = 2)
+SELECT *
+FROM x
+
+--22.05
+WITH x AS
+(SELECT *,
+ROW_NUMBER() OVER(PARTITION BY group_no ORDER BY date_of_birth) group_num
+FROM students)
+SELECT *
+FROM x
+
+--22.06a
+--CTE
+WITH c AS 
+(SELECT s.student_id, s.surname, sg.exam_date,
+ROW_NUMBER() OVER(PARTITION BY s.student_id ORDER BY exam_date DESC) row_num
+FROM students s
+INNER JOIN student_grades sg ON s.student_id = sg.student_id)
+SELECT *
+FROM c
+WHERE row_num = 1
+
+--derived table
+SELECT *
+FROM
+(SELECT s.student_id, s.surname, sg.exam_date,
+ROW_NUMBER() OVER(PARTITION BY s.student_id ORDER BY exam_date DESC) row_num
+FROM students s
+INNER JOIN student_grades sg ON s.student_id = sg.student_id) c
+WHERE row_num = 1
+
+--22.06b
+CREATE OR ALTER VIEW last_exam AS
+SELECT 
+
+--tworzenie session context
+EXEC sp_set_session_context @key = N'module',@value = 'Mathematics'
+SELECT *
+FROM studmod_v
+
+--widok
+CREATE OR ALTER VIEW studmod_v AS
+SELECT surname, first_name
+FROM students
+WHERE student_id IN
+(SELECT student_id
+FROM students_modules
+WHERE module_id IN
+(SELECT module_id
+FROM modules
+WHERE module_name = SESSION_CONTEXT(N'module')))
