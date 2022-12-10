@@ -99,21 +99,101 @@ WHERE row_num = 1
 
 --22.06b
 CREATE OR ALTER VIEW last_exam AS
-SELECT 
+SELECT * 
+FROM
+(SELECT s.student_id, s.surname, sg.exam_date,
+ROW_NUMBER() OVER(PARTITION BY s.student_id ORDER BY exam_date DESC) row_num
+FROM students s
+INNER JOIN student_grades sg ON s.student_id = sg.student_id) c
+WHERE row_num = 1
 
---tworzenie session context
-EXEC sp_set_session_context @key = N'module',@value = 'Mathematics'
+SELECT * 
+FROM last_exam
+
+
+--22.06c
+CREATE OR ALTER VIEW last_exam AS
+SELECT * 
+FROM
+(SELECT s.student_id, s.surname, sg.exam_date,
+ROW_NUMBER() OVER(PARTITION BY s.student_id ORDER BY exam_date DESC) row_num
+FROM students s
+INNER JOIN student_grades sg ON s.student_id = sg.student_id) c
+
+SELECT * 
+FROM last_exam
+WHERE row_num <= 3
+
+--22.06d
+CREATE OR ALTER FUNCTION last_exams(@exams tinyInt)
+RETURNS TABLE AS RETURN
+SELECT * 
+FROM
+(SELECT s.student_id, s.surname, sg.exam_date,
+ROW_NUMBER() OVER(PARTITION BY s.student_id ORDER BY exam_date DESC) row_num
+FROM students s
+INNER JOIN student_grades sg ON s.student_id = sg.student_id) c
+WHERE row_num <= @exams
+
 SELECT *
-FROM studmod_v
+FROM last_exams(1)
+SELECT *
+FROM last_exams(2)
+SELECT *
+FROM last_exams(4)
 
---widok
-CREATE OR ALTER VIEW studmod_v AS
-SELECT surname, first_name
-FROM students
-WHERE student_id IN
-(SELECT student_id
-FROM students_modules
-WHERE module_id IN
-(SELECT module_id
+--22.07a
+--CTE
+WITH c AS
+(SELECT s.*,
+ROW_NUMBER() OVER(PARTITION BY s.group_no ORDER BY s.date_of_birth DESC) row_num
+FROM students s
+WHERE date_of_birth IS NOT NULL
+AND group_no IS NOT NULL)
+SELECT *
+FROM c
+WHERE row_num <= 2
+
+--derived table
+SELECT *
+FROM
+(SELECT s.*,
+ROW_NUMBER() OVER(PARTITION BY s.group_no ORDER BY s.date_of_birth DESC) row_num
+FROM students s) c
+WHERE date_of_birth IS NOT NULL
+AND group_no IS NOT NULL
+AND row_num <= 2
+
+--22.07b
+CREATE OR ALTER FUNCTION youngest_students(@students tinyInt,@group Char(8))
+RETURNS TABLE AS RETURN
+WITH c AS
+(SELECT s.*,
+ROW_NUMBER() OVER(PARTITION BY s.group_no ORDER BY s.date_of_birth DESC) row_num
+FROM students s
+WHERE date_of_birth IS NOT NULL
+AND group_no = @group)
+SELECT *
+FROM c
+WHERE row_num <= @students
+
+SELECT *
+FROM youngest_students(4,'DMIe1011')
+SELECT *
+FROM youngest_students(3,'ZMIe2012')
+SELECT *
+FROM youngest_students(5,'DZZa3001')
+
+--22.08a
+WITH ModulesCTE AS
+(
+SELECT module_id, module_name, no_of_hours, 0 AS distance
 FROM modules
-WHERE module_name = SESSION_CONTEXT(N'module')))
+WHERE module_id = 9
+	UNION ALL
+SELECT M.module_id, M.module_name, M.no_of_hours, S.distance + 1
+FROM ModulesCTE AS S JOIN modules AS M 
+ON S.module_id  = M.preceding_module
+)
+SELECT module_id, module_name, no_of_hours, distance
+FROM ModulesCTE
