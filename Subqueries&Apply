@@ -170,19 +170,59 @@ FROM modules
 WHERE module_name = 'Mathematics')
 
 --21.15a
-SELECT *
+SELECT s.*, planned_exam_date
 FROM students s
 CROSS APPLY
-(SELECT MIN(planned_exam_date)
+(SELECT top(1) *
 FROM students_modules sm
 WHERE s.student_id = sm.student_id
-AND s.group_no LIKE 'DMIe1011') A
+AND planned_exam_date IS NOT NULL
+AND group_no = 'DMIe1011'
+ORDER BY planned_exam_date, student_id) x
+ORDER BY planned_exam_date
+
+--21.15b
+SELECT s.*, planned_exam_date
+FROM students s
+CROSS APPLY
+(SELECT top(1) *
+FROM students_modules sm
+WHERE s.student_id = sm.student_id
+AND group_no = 'DMIe1011'
+ORDER BY planned_exam_date DESC) x
+ORDER BY planned_exam_date DESC
 
 --21.16a
-SELECT s.student_id, s.surname, grade
+SELECT s.student_id, s.surname, grade, exam_date
 FROM students s
 CROSS APPLY
 (SELECT top(2) *
 FROM student_grades sg
 WHERE s.student_id = sg.student_id
 ORDER BY grade DESC) x
+
+--21.16b
+SELECT s.student_id, s.surname, grade, exam_date
+FROM students s
+OUTER APPLY
+(SELECT top(2) *
+FROM student_grades sg
+WHERE s.student_id = sg.student_id
+ORDER BY grade) x
+
+--21.17
+SELECT s.student_id, s.surname, fee_amount, date_of_payment
+FROM students s
+OUTER APPLY
+(SELECT top(2) t.*
+FROM tuition_fees t
+WHERE s.student_id = t.student_id
+ORDER BY t.date_of_payment DESC) x
+
+--21.18
+SELECT module_name
+FROM modules
+WHERE module_id IN
+(SELECT preceding_module
+FROM modules
+WHERE module_name = 'Databases')
