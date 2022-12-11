@@ -185,31 +185,38 @@ SELECT *
 FROM youngest_students(5,'DZZa3001')
 
 --22.08a
-WITH ModulesCTE AS
+WITH modulesCTE AS
 (
-SELECT module_id, module_name, no_of_hours, 0 distance
+SELECT *, 0 distance
 FROM modules
 WHERE module_id = 9
 	UNION ALL
-SELECT mo.module_id, mo.module_name, mo.no_of_hours, m.distance + 1
-FROM ModulesCTE m
-JOIN modules mo ON m.preceding_module = mo.module_id
+SELECT m.*, distance + 1
+FROM modulesCTE mo
+INNER JOIN modules m ON mo.preceding_module = m.module_id
 )
 SELECT module_id, module_name, no_of_hours, distance
-FROM ModulesCTE
+FROM modulesCTE
 
 --22.08b
 CREATE OR ALTER FUNCTION preceding_modules(@mo_id tinyInt)
 RETURNS TABLE AS RETURN
-WITH ModulesCTE AS
+WITH modulesCTE AS
 (
-SELECT module_id, module_name, no_of_hours, 0 distance
+SELECT *, 0 distance
 FROM modules
 WHERE module_id = @mo_id
 	UNION ALL
-SELECT mo.module_id, mo.module_name, mo.no_of_hours, m.distance + 1
-FROM ModulesCTE m
-JOIN modules mo ON m.preceding_module = mo.module_id
+SELECT m.*, distance + 1
+FROM modulesCTE mo
+INNER JOIN modules m ON mo.preceding_module = m.module_id
 )
 SELECT module_id, module_name, no_of_hours, distance
-FROM ModulesCTE
+FROM modulesCTE
+
+SELECT *
+FROM preceding_modules(9)
+SELECT *
+FROM preceding_modules(5)
+SELECT *
+FROM preceding_modules(8)
