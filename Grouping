@@ -1,0 +1,153 @@
+--4a.01
+SELECT COUNT(student_id)
+FROM students
+
+--4a.02
+SELECT COUNT(student_id)
+FROM students
+WHERE group_no IS NOT NULL
+
+--4a.03
+SELECT COUNT(student_id)
+FROM students
+WHERE group_no IS NULL
+
+--4a.04
+SELECT COUNT(group_no)
+FROM students
+WHERE group_no IS NOT NULL
+GROUP BY group_no
+
+--4a.05
+SELECT COUNT(group_no) no_of_students
+FROM students
+WHERE group_no IS NOT NULL
+GROUP BY group_no
+ORDER BY no_of_students
+
+--4a.06
+SELECT group_no, COUNT(student_id) no_of_students
+FROM students
+GROUP BY group_no
+HAVING COUNT(student_id) > 3
+ORDER BY no_of_students
+
+--4a.07
+SELECT g.grade, COUNT(sg.grade)
+FROM grades g
+LEFT JOIN student_grades sg ON g.grade = sg.grade
+GROUP BY g.grade
+ORDER BY g.grade
+
+--4a.08
+SELECT d.department, SUM(no_of_hours) no_of_hours
+FROM departments d
+LEFT JOIN lecturers l ON d.department = l.department
+LEFT JOIN modules m ON l.lecturer_id = m.lecturer_id
+GROUP BY d.department
+ORDER BY no_of_hours
+
+--4a.09
+SELECT e.surname, COUNT(m.module_id) no_of_modules
+FROM employees e
+INNER JOIN lecturers l ON e.employee_id = l.lecturer_id
+LEFT JOIN modules m ON l.lecturer_id = m.lecturer_id
+GROUP BY e.surname, e.employee_id
+ORDER BY e.surname DESC
+
+--4a.10
+SELECT e.surname, COUNT(m.module_id) no_of_modules
+FROM employees e
+INNER JOIN lecturers l ON e.employee_id = l.lecturer_id
+LEFT JOIN modules m ON l.lecturer_id = m.lecturer_id
+GROUP BY e.surname, e.employee_id
+HAVING COUNT(m.module_id) >= 2
+ORDER BY no_of_modules DESC,e.surname DESC
+
+--4a.11
+SELECT s.surname, s.first_name, AVG(sg.grade) avg_grade
+FROM students s
+INNER JOIN student_grades sg ON s.student_id = sg.student_id
+GROUP BY s.surname, s.first_name
+HAVING s.surname = 'Bowen'
+ORDER BY s.surname DESC, s.first_name DESC
+
+--4a.12
+SELECT e.surname, e.first_name, AVG(sg.grade) avg_grade
+FROM employees e
+INNER JOIN modules m ON e.employee_id = m.lecturer_id
+LEFT JOIN student_grades sg ON m.module_id = sg.module_id
+GROUP BY e.surname, e.first_name, e.employee_id
+ORDER BY avg_grade DESC
+
+--4a.13a
+SELECT module_name, SUM(ap.overtime_rate * m.no_of_hours) 
+FROM modules m
+INNER JOIN lecturers l ON m.lecturer_id = l.lecturer_id
+INNER JOIN acad_positions ap ON l.acad_position = ap.acad_position
+GROUP BY module_name
+HAVING module_name = 'Economics' OR module_name = 'Statistics'
+
+--4a.13b
+SELECT
+(SELECT SUM(no_of_hours) 
+FROM modules m
+WHERE lecturer_id IS NULL)
+*
+(SELECT AVG(overtime_rate)
+FROM acad_positions)
+
+--4a.13c
+SELECT
+(SELECT SUM(m.no_of_hours)
+FROM modules m
+LEFT JOIN lecturers l ON m.lecturer_id = l.lecturer_id
+WHERE m.lecturer_id IS NULL 
+OR l.acad_position IS NULL)
+*
+(SELECT MAX(overtime_rate)
+FROM acad_positions)
+
+--4a.14
+SELECT SUM(no_of_hours*overtime_rate)
+FROM modules m
+INNER JOIN lecturers l ON m.lecturer_id = l.lecturer_id
+INNER JOIN acad_positions ap ON l.acad_position = ap.acad_position
+
+--4a.15
+SELECT g.group_no, COUNT(student_id) no_of_students
+FROM groups g
+LEFT JOIN students s ON g.group_no = s.group_no
+GROUP BY g.group_no
+ORDER BY COUNT(student_id),g.group_no
+
+--4a.16
+SELECT m.module_name, AVG(sg.grade) average
+FROM modules m
+LEFT JOIN student_grades sg ON m.module_id = sg.module_id
+GROUP BY m.module_name
+HAVING m.module_name LIKE 'A%'
+
+--4a.17
+SELECT group_no, COUNT(s.student_id) no_of_students, AVG(grade) average_grade
+FROM students s
+INNER JOIN student_grades sg ON s.student_id = sg.student_id
+GROUP BY group_no
+HAVING COUNT(s.student_id) >= 2
+ORDER BY AVG(grade) DESC
+
+--4a.18
+SELECT department, COUNT(acad_position)
+FROM lecturers
+GROUP BY department, acad_position
+HAVING acad_position = 'Doctor'
+AND COUNT(acad_position) >= 2
+ORDER BY COUNT(acad_position) DESC, department
+
+--4a.19
+SELECT module_id, module_name, m.department, CONCAT(e.surname,' ',e.first_name) employee
+FROM modules m
+LEFT JOIN lecturers l ON m.lecturer_id = l.lecturer_id
+LEFT JOIN employees e ON l.lecturer_id = e.employee_id
+WHERE m.lecturer_id IS NULL
+ORDER BY module_id
