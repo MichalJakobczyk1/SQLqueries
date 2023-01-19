@@ -1,0 +1,51 @@
+--4b.1a
+SELECT l.department, l.acad_position
+FROM lecturers l
+INNER JOIN modules m ON m.lecturer_id = l.lecturer_id
+GROUP BY ROLLUP (l.department, l.acad_position)
+
+--4b.1b
+SELECT GROUPING(l.acad_position),
+l.department, l.acad_position
+FROM lecturers l
+INNER JOIN modules m ON m.lecturer_id = l.lecturer_id
+GROUP BY ROLLUP (l.department, l.acad_position)
+
+--4b.1c
+SELECT GROUPING_ID(l.department, l.acad_position),
+l.department, l.acad_position
+FROM lecturers l
+INNER JOIN modules m ON m.lecturer_id = l.lecturer_id
+GROUP BY ROLLUP (l.department, l.acad_position)
+
+--4b.2a
+SELECT group_no, module_name, COUNT(s.student_id)
+FROM students s
+LEFT JOIN students_modules sm ON s.student_id = sm.student_id
+LEFT JOIN modules m ON sm.module_id = m.module_id
+GROUP BY ROLLUP(group_no, module_name)
+
+--4b.2b
+SELECT GROUPING_ID(group_no, module_name),
+group_no, module_name, COUNT(s.student_id)
+FROM students s
+LEFT JOIN students_modules sm ON s.student_id = sm.student_id
+LEFT JOIN modules m ON sm.module_id = m.module_id
+GROUP BY ROLLUP(group_no, module_name)
+
+--4b.2c
+SELECT GROUPING_ID(group_no, module_name),
+group_no, module_name, COUNT(s.student_id)
+FROM students s
+LEFT JOIN students_modules sm ON s.student_id = sm.student_id
+LEFT JOIN modules m ON sm.module_id = m.module_id
+GROUP BY ROLLUP(group_no, module_name)
+HAVING GROUPING_ID(group_no, module_name) = 1
+
+--4b.3
+SELECT GROUPING_ID(l.acad_position, l.department) grp,
+l.acad_position, l.department,
+SUM(m.no_of_hours) no_of_hours
+FROM lecturers l
+INNER JOIN modules m ON l.lecturer_id = m.lecturer_id
+GROUP BY ROLLUP (l.acad_position, l.department)
